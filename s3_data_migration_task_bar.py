@@ -34,20 +34,28 @@ total_objects = int(input('Enter total final objects expected: '))
 # Initial call to print 0% progress
 printProgressBar(0, total_objects, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
+# Configure boto3 session details to retrieve S3 object details
 session = boto3.Session(profile_name=profile_name)
 s3_client = session.client('s3')
 s3_resource = session.resource('s3')
 s3_bucket = s3_resource.Bucket(bucket_name)
 
-interim_count = sum([page['KeyCount'] for page in s3_client.get_paginator('list_objects_v2').paginate(Bucket=bucket_name)])
-
-
-while interim_count < total_objects:
+# Initial count for summing total objects currently present in bucket
+interim_count = 0
+# Loop until bucket is deemed 'full'
+while interim_count <= total_objects:
     try:
+        # Count current objects
         interim_count = sum([page['KeyCount'] for page in s3_client.get_paginator('list_objects_v2').paginate(Bucket=bucket_name)])
-
+    
+    # Exception handling
     except botocore.exceptions.ParamValidationError as error:
         raise ValueError('The parameters you provided are incorrect: {}'.format(error))
 
-    time.sleep(1)
+    # Update progress bar
     printProgressBar(interim_count, total_objects, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
+# Once finished, print ascii art to console! 
+final_display = open ('final_display.txt','r')
+print('')
+print(''.join([line for line in final_display]))
